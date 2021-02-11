@@ -1,15 +1,14 @@
 pragma solidity 0.5.17;
 
-/* import "./YAMTokenInterface.sol"; */
-import "./YAMGovernance.sol";
+import "./RPYTokenInterface.sol";
 
-contract YAMToken is YAMGovernanceToken {
+contract RPYToken{
     // Modifiers
     modifier onlyGov() {
         require(msg.sender == gov);
         _;
     }
-
+    
     modifier onlyRebaser() {
         require(msg.sender == rebaser);
         _;
@@ -33,7 +32,7 @@ contract YAMToken is YAMGovernanceToken {
     )
         public
     {
-        require(yamsScalingFactor == 0, "already initialized");
+        require(rpysScalingFactor == 0, "already initialized");
         name = name_;
         symbol = symbol_;
         decimals = decimals_;
@@ -43,6 +42,7 @@ contract YAMToken is YAMGovernanceToken {
     /**
     * @notice Computes the current max scaling factor
     */
+
     function maxScalingFactor()
         external
         view
@@ -56,8 +56,8 @@ contract YAMToken is YAMGovernanceToken {
         view
         returns (uint256)
     {
-        // scaling factor can only go up to 2**256-1 = initSupply * yamsScalingFactor
-        // this is used to check if yamsScalingFactor will be too high to compute balances when rebasing.
+        // scaling factor can only go up to 2**256-1 = initSupply * rpysScalingFactor
+        // this is used to check if rpysScalingFactor will be too high to compute balances when rebasing.
         return uint256(-1) / initSupply;
     }
 
@@ -81,22 +81,21 @@ contract YAMToken is YAMGovernanceToken {
       totalSupply = totalSupply.add(amount);
 
       // get underlying value
-      uint256 yamValue = amount.mul(internalDecimals).div(yamsScalingFactor);
+      uint256 rpyValue = amount.mul(internalDecimals).div(rpysScalingFactor);
 
       // increase initSupply
-      initSupply = initSupply.add(yamValue);
+      initSupply = initSupply.add(rpyValue);
 
       // make sure the mint didnt push maxScalingFactor too low
-      require(yamsScalingFactor <= _maxScalingFactor(), "max scaling factor too low");
+      require(rpysScalingFactor <= _maxScalingFactor(), "max scaling factor too low");
 
       // add balance
-      _yamBalances[to] = _yamBalances[to].add(yamValue);
+      _rpyBalances[to] = _rpyBalances[to].add(rpyValue);
 
       // add delegates to the minter
-      _moveDelegates(address(0), _delegates[to], yamValue);
       emit Mint(to, amount);
     }
-
+     
     /* - ERC20 functionality - */
 
     /**
@@ -110,22 +109,20 @@ contract YAMToken is YAMGovernanceToken {
         validRecipient(to)
         returns (bool)
     {
-        // underlying balance is stored in yams, so divide by current scaling factor
+        // underlying balance is stored in rpys, so divide by current scaling factor
 
         // note, this means as scaling factor grows, dust will be untransferrable.
-        // minimum transfer value == yamsScalingFactor / 1e24;
+        // minimum transfer value == rpysScalingFactor / 1e24;
 
         // get amount in underlying
-        uint256 yamValue = value.mul(internalDecimals).div(yamsScalingFactor);
+        uint256 rpyValue = value.mul(internalDecimals).div(rpysScalingFactor);
 
         // sub from balance of sender
-        _yamBalances[msg.sender] = _yamBalances[msg.sender].sub(yamValue);
+        _rpyBalances[msg.sender] = _rpyBalances[msg.sender].sub(rpyValue);
 
         // add to balance of receiver
-        _yamBalances[to] = _yamBalances[to].add(yamValue);
+        _rpyBalances[to] = _rpyBalances[to].add(rpyValue);
         emit Transfer(msg.sender, to, value);
-
-        _moveDelegates(_delegates[msg.sender], _delegates[to], yamValue);
         return true;
     }
 
@@ -143,15 +140,14 @@ contract YAMToken is YAMGovernanceToken {
         // decrease allowance
         _allowedFragments[from][msg.sender] = _allowedFragments[from][msg.sender].sub(value);
 
-        // get value in yams
-        uint256 yamValue = value.mul(internalDecimals).div(yamsScalingFactor);
+        // get value in rpys
+        uint256 rpyValue = value.mul(internalDecimals).div(rpysScalingFactor);
 
         // sub from from
-        _yamBalances[from] = _yamBalances[from].sub(yamValue);
-        _yamBalances[to] = _yamBalances[to].add(yamValue);
+        _rpyBalances[from] = _rpyBalances[from].sub(rpyValue);
+        _rpyBalances[to] = _rpyBalances[to].add(rpyValue);
         emit Transfer(from, to, value);
 
-        _moveDelegates(_delegates[from], _delegates[to], yamValue);
         return true;
     }
 
@@ -164,7 +160,7 @@ contract YAMToken is YAMGovernanceToken {
       view
       returns (uint256)
     {
-      return _yamBalances[who].mul(yamsScalingFactor).div(internalDecimals);
+      return _rpyBalances[who].mul(rpysScalingFactor).div(internalDecimals);
     }
 
     /** @notice Currently returns the internal storage amount
@@ -176,7 +172,7 @@ contract YAMToken is YAMGovernanceToken {
       view
       returns (uint256)
     {
-      return _yamBalances[who];
+      return _rpyBalances[who];
     }
 
     /**
@@ -320,40 +316,37 @@ contract YAMToken is YAMGovernanceToken {
         returns (uint256)
     {
         if (indexDelta == 0) {
-          emit Rebase(epoch, yamsScalingFactor, yamsScalingFactor);
+          emit Rebase(epoch, rpysScalingFactor, rpysScalingFactor);
           return totalSupply;
         }
 
-        uint256 prevYamsScalingFactor = yamsScalingFactor;
+        uint256 prevRamsScalingFactor = rpysScalingFactor;
 
         if (!positive) {
-           yamsScalingFactor = yamsScalingFactor.mul(BASE.sub(indexDelta)).div(BASE);
+           rpysScalingFactor = rpysScalingFactor.mul(BASE.sub(indexDelta)).div(BASE);
         } else {
-            uint256 newScalingFactor = yamsScalingFactor.mul(BASE.add(indexDelta)).div(BASE);
+            uint256 newScalingFactor = rpysScalingFactor.mul(BASE.add(indexDelta)).div(BASE);
             if (newScalingFactor < _maxScalingFactor()) {
-                yamsScalingFactor = newScalingFactor;
+                rpysScalingFactor = newScalingFactor;
             } else {
-              yamsScalingFactor = _maxScalingFactor();
+              rpysScalingFactor = _maxScalingFactor();
             }
         }
 
-        totalSupply = initSupply.mul(yamsScalingFactor);
-        emit Rebase(epoch, prevYamsScalingFactor, yamsScalingFactor);
+        totalSupply = initSupply.mul(rpysScalingFactor);
+        emit Rebase(epoch, prevRpysScalingFactor, rpysScalingFactor);
         return totalSupply;
     }
 }
 
-contract YAM is YAMToken {
+contract RPY is RPYToken {
     /**
      * @notice Initialize the new money market
      * @param name_ ERC-20 name of this token
      * @param symbol_ ERC-20 symbol of this token
      * @param decimals_ ERC-20 decimal precision of this token
      */
-    function initialize(
-        string memory name_,
-        string memory symbol_,
-        uint8 decimals_,
+    function initialize( 
         address initial_owner,
         uint256 initSupply_
     )
@@ -361,12 +354,12 @@ contract YAM is YAMToken {
     {
         require(initSupply_ > 0, "0 init supply");
 
-        super.initialize(name_, symbol_, decimals_);
+        super.initialize(Rupay, RPY, 2);
 
-        initSupply = initSupply_.mul(10**24/ (BASE));
+        initSupply = initSupply_.mul(10**24/ (BASE));  
         totalSupply = initSupply_;
-        yamsScalingFactor = BASE;
-        _yamBalances[initial_owner] = initSupply_.mul(10**24 / (BASE));
+        rpysScalingFactor = BASE;
+        _rpyBalances[initial_owner] = initSupply_.mul(10**24 / (BASE));
 
         // owner renounces ownership after deployment as they need to set
         // rebaser and incentivizer

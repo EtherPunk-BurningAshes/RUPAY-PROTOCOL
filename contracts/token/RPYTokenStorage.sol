@@ -2,8 +2,8 @@ pragma solidity 0.5.17;
 
 import "../lib/SafeMath.sol";
 
-// Storage for a YAM token
-contract YAMTokenStorage {
+// Storage for RPY token
+contract RPYTokenStorage {
 
     using SafeMath for uint256;
 
@@ -27,28 +27,19 @@ contract YAMTokenStorage {
      */
     uint8 public decimals;
 
-    /**
-     * @notice Governor for this contract
-     */
-    address public gov;
-
-    /**
-     * @notice Pending governance for this contract
-     */
-    address public pendingGov;
-
+ 
     /**
      * @notice Approved rebaser for this contract
      */
     address public rebaser;
 
     /**
-     * @notice Reserve address of YAM protocol
+     * @notice Reserve address of RPY protocol
      */
     address public incentivizer;
 
     /**
-     * @notice Total supply of YAMs
+     * @notice Total supply of RPYS
      */
     uint256 public totalSupply;
 
@@ -59,17 +50,17 @@ contract YAMTokenStorage {
 
     /**
      * @notice Used for percentage maths
-     */
-    uint256 public constant BASE = 10**18;
+     */ 
+    uint256 public constant BASE = 10**18;  
 
     /**
      * @notice Scaling factor that adjusts everyone's balances
      */
-    uint256 public yamsScalingFactor;
+    uint256 public rpysScalingFactor;
 
-    mapping (address => uint256) internal _yamBalances;
+    mapping (address => uint256) internal _rpyBalances;
 
-    mapping (address => mapping (address => uint256)) internal _allowedFragments;
+    mapping (address => mapping (address => uint256)) internal _allowedFragments; 
 
     uint256 public initSupply;
 
