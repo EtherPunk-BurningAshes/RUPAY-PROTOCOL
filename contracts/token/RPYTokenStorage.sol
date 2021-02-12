@@ -51,7 +51,7 @@ contract RPYTokenStorage {
     /**
      * @notice Used for percentage maths
      */ 
-    uint256 public constant BASE = 10**18;  
+    uint256 public constant BASE = 10**24;  
 
     /**
      * @notice Scaling factor that adjusts everyone's balances

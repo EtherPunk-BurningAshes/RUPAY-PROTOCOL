@@ -153,7 +153,7 @@ contract RPYRebaser {
         public
     {
           minRebaseTimeIntervalSec = 12 hours;
-          rebaseWindowOffsetSec = 28800; // 8am/8pm UTC rebases
+          rebaseWindowOffsetSec = 23400; // 12am/12pm rebases
           reservesContract = reservesContract_;
           (address token0, address token1) = sortTokens(rpyAddress_, reserveToken_);
 
@@ -774,7 +774,7 @@ contract RPYRebaser {
             ))));
     }
 
-    // returns sorted token addresses, used to handle return values from pairs sorted in this order
+    // returns sorted token addresses, used to handle return values from pairs sorted in this order 
     function sortTokens(
         address tokenA,
         address tokenB

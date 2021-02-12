@@ -3,6 +3,9 @@ pragma solidity 0.5.17;
 import "./RPYTokenInterface.sol";
 
 contract RPYToken{
+
+    address payable public gov; //Governor
+
     // Modifiers
     modifier onlyGov() {
         require(msg.sender == gov);
@@ -25,6 +28,10 @@ contract RPYToken{
         _;
     }
 
+    constructor() {
+        gov = msg.sender;  //Governor is the first deployer 
+    }
+
     function initialize(
         string memory name_,
         string memory symbol_,
@@ -43,7 +50,7 @@ contract RPYToken{
     * @notice Computes the current max scaling factor
     */
 
-    function maxScalingFactor()
+    function maxScalingFactor()   
         external
         view
         returns (uint256)
@@ -160,7 +167,7 @@ contract RPYToken{
       view
       returns (uint256)
     {
-      return _rpyBalances[who].mul(rpysScalingFactor).div(internalDecimals);
+      return _rpyBalances[who].mul(rpysScalingFactor).div(internalDecimals); 
     }
 
     /** @notice Currently returns the internal storage amount
@@ -172,7 +179,7 @@ contract RPYToken{
       view
       returns (uint256)
     {
-      return _rpyBalances[who];
+      return _rpyBalances[who]; 
     }
 
     /**
@@ -260,17 +267,6 @@ contract RPYToken{
         emit NewRebaser(oldRebaser, rebaser_);
     }
 
-    /** @notice sets the incentivizer
-     * @param incentivizer_ The address of the rebaser contract to use for authentication.
-     */
-    function _setIncentivizer(address incentivizer_)
-        external
-        onlyGov
-    {
-        address oldIncentivizer = incentivizer;
-        incentivizer = incentivizer_;
-        emit NewIncentivizer(oldIncentivizer, incentivizer_);
-    }
 
     /** @notice sets the pendingGov
      * @param pendingGov_ The address of the rebaser contract to use for authentication.
@@ -357,7 +353,7 @@ contract RPY is RPYToken {
         super.initialize(Rupay, RPY, 2);
 
         initSupply = initSupply_.mul(10**24/ (BASE));  
-        totalSupply = initSupply_;
+        totalSupply = initSupply_;                         
         rpysScalingFactor = BASE;
         _rpyBalances[initial_owner] = initSupply_.mul(10**24 / (BASE));
 
