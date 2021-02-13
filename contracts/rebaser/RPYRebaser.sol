@@ -470,21 +470,7 @@ contract RPYRebaser {
    }
 
 
-    function afterRebase(
-        uint256 mintAmount,
-        uint256 offPegPerc
-    )
-        internal
-    {
-        // update uniswap
-        UniswapPair(uniswap_pair).sync();
-
-        if (mintAmount > 0) {
-            buyReserveAndTransfer(
-                mintAmount,
-                offPegPerc
-            );
-        }
+    
 
         // call any extra functions
         for (uint i = 0; i < transactions.length; i++) {
@@ -623,22 +609,7 @@ contract RPYRebaser {
     /* - Constructor Helpers - */
 
     // calculates the CREATE2 address for a pair without making any external calls
-    function pairFor(
-        address factory,
-        address token0,
-        address token1
-    )
-        internal
-        pure
-        returns (address pair)
-    {
-        pair = address(uint(keccak256(abi.encodePacked(
-                hex'ff',
-                factory,
-                keccak256(abi.encodePacked(token0, token1)),
-                hex'96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f' // init code hash
-            ))));
-    }
+    
 
     // returns sorted token addresses, used to handle return values from pairs sorted in this order 
     function sortTokens(
