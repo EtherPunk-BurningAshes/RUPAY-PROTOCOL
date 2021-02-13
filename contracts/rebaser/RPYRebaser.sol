@@ -356,50 +356,7 @@ contract RPYRebaser {
     }
 
 
-    function uniswapV2Call(
-        address sender,
-        uint256 amount0,
-        uint256 amount1,
-        bytes memory data
-    )
-        public
-    {
-        // enforce that it is coming from uniswap
-        require(msg.sender == uniswap_pair, "bad msg.sender");
-        // enforce that this contract called uniswap
-        require(sender == address(this), "bad origin");
-        (UniVars memory uniVars) = abi.decode(data, (UniVars));
-
-        RPYTokenInterface rpy = RPYTokenInterface(rpyAddress);
-
-        if (uniVars.amountFromReserves > 0) {
-            // transfer from reserves and mint to uniswap
-            rpy.transferFrom(reservesContract, uniswap_pair, uniVars.amountFromReserves);
-            if (uniVars.amountFromReserves < uniVars.rpysToUni) {
-                // if the amount from reserves > rpysToUni, we have fully paid for the yCRV tokens
-                // thus this number would be 0 so no need to mint
-                rpy.mint(uniswap_pair, uniVars.rpysToUni.sub(uniVars.amountFromReserves));
-            }
-        } else {
-            // mint to uniswap
-            rpy.mint(uniswap_pair, uniVars.rpysToUni);
-        }
-
-        // mint unsold to mintAmount
-        if (uniVars.mintToReserves > 0) {
-            rpy.mint(reservesContract, uniVars.mintToReserves);
-        }
-
-        // transfer reserve token to reserves
-        if (isToken0) {
-            SafeERC20.safeTransfer(IERC20(reserveToken), reservesContract, amount1);
-            emit TreasuryIncreased(amount1, uniVars.rpysToUni, uniVars.amountFromReserves, uniVars.mintToReserves);
-        } else {
-            SafeERC20.safeTransfer(IERC20(reserveToken), reservesContract, amount0);
-            emit TreasuryIncreased(amount0, uniVars.rpysToUni, uniVars.amountFromReserves, uniVars.mintToReserves);
-        }
-    }
-
+ 
     function buyReserveAndTransfer(
         uint256 mintAmount,
         uint256 offPegPerc
@@ -584,72 +541,13 @@ contract RPYRebaser {
      *      to reduce this attack vector. Additional there is very little supply
      *      to be able to manipulate this during that time period of highest vuln.
      */
-    function getTWAP()
-        internal
-        returns (uint256)
-    {
-      (uint priceCumulative, uint32 blockTimestamp) =
-         UniswapV2OracleLibrary.currentCumulativePrices(uniswap_pair, isToken0);
-       uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
-
-       // no period check as is done in isRebaseWindow
-
-       // overflow is desired, casting never truncates
-        // cumulative price is in (uq112x112 price * seconds) units so we simply wrap it after division by time elapsed
-        FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((priceCumulative - priceCumulativeLast) / timeElapsed));
-
-        priceCumulativeLast = priceCumulative;
-        blockTimestampLast = blockTimestamp;
-
-        return FixedPoint.decode144(FixedPoint.mul(priceAverage, 10**18));
-    }
+    
 
     /**
      * @notice Calculates current TWAP from uniswap
      *
      */
-    function getCurrentTWAP()
-        public
-        view
-        returns (uint256)
-    {
-      (uint priceCumulative, uint32 blockTimestamp) =
-         UniswapV2OracleLibrary.currentCumulativePrices(uniswap_pair, isToken0);
-       uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
-
-       // no period check as is done in isRebaseWindow
-
-       // overflow is desired, casting never truncates
-        // cumulative price is in (uq112x112 price * seconds) units so we simply wrap it after division by time elapsed
-        FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((priceCumulative - priceCumulativeLast) / timeElapsed));
-
-        return FixedPoint.decode144(FixedPoint.mul(priceAverage, 10**18));
-    }
-
-    /**
-     * @notice Sets the deviation threshold fraction. If the exchange rate given by the market
-     *         oracle is within this fractional distance from the targetRate, then no supply
-     *         modifications are made.
-     * @param deviationThreshold_ The new exchange rate threshold fraction.
-     */
-    function setDeviationThreshold(uint256 deviationThreshold_)
-        external
-        onlyGov
-    {
-        require(deviationThreshold > 0);
-        uint256 oldDeviationThreshold = deviationThreshold;
-        deviationThreshold = deviationThreshold_;
-        emit NewDeviationThreshold(oldDeviationThreshold, deviationThreshold_);
-    }
-
-    /**
-     * @notice Sets the rebase lag parameter.
-               It is used to dampen the applied supply adjustment by 1 / rebaseLag
-               If the rebase lag R, equals 1, the smallest value for R, then the full supply
-               correction is applied on each rebase cycle.
-               If it is greater than 1, then a correction of 1/R of is applied on each rebase.
-     * @param rebaseLag_ The new rebase lag parameter.
-     */
+  
     function setRebaseLag(uint256 rebaseLag_)
         external
         onlyGov
