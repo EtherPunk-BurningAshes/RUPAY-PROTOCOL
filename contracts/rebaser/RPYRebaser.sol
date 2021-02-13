@@ -3,8 +3,6 @@ pragma experimental ABIEncoderV2;
 
 import "../lib/SafeERC20.sol";
 import "../lib/SafeMath.sol";
-import '../lib/IUniswapV2Pair.sol';
-import "../lib/UniswapV2OracleLibrary.sol";
 import "../token/RPYTokenInterface.sol";
 
 
@@ -147,7 +145,6 @@ contract RPYRebaser {
     constructor(
         address rpyAddress_,
         address reserveToken_,
-        address uniswap_factory,
         address reservesContract_
     )
         public
@@ -164,7 +161,7 @@ contract RPYRebaser {
               isToken0 = false;
           }
           // uniswap RPY<>Reserve pair
-          uniswap_pair = pairFor(uniswap_factory, token0, token1);
+         
 
           // Reserves contract is mutable
           reservesContract = reservesContract_;
