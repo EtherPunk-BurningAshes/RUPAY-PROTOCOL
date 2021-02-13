@@ -299,7 +299,7 @@ contract RPYRebaser {
      *      Where DeviationFromTargetRate is (MarketOracleRate - targetRate) / targetRate
      *      and targetRate is 1e18
      */
-    function rebase()
+    function rebase(uint256 _exchangerate)
         public
     {
         // EOA only
@@ -317,7 +317,7 @@ contract RPYRebaser {
         epoch = epoch.add(1);
 
         // get twap from uniswap v2;
-        uint256 exchangeRate = getTWAP();
+        
 
         // calculates % change to supply
         (uint256 offPegPerc, bool positive) = computeOffPegPerc(exchangeRate);
@@ -442,36 +442,7 @@ contract RPYRebaser {
         }
     }
 
-    function uniswapMaxSlippage(
-        uint256 token0,
-        uint256 token1,
-        uint256 offPegPerc
-    )
-      internal
-      view
-      returns (uint256)
-    {
-        if (isToken0) {
-          if (offPegPerc >= 10**17) {
-              // cap slippage
-              return token0.mul(maxSlippageFactor).div(10**18);
-          } else {
-              // in the 5-10% off peg range, slippage is essentially 2*x (where x is percentage of pool to buy).
-              // all we care about is not pushing below the peg, so underestimate
-              // the amount we can sell by dividing by 3. resulting price impact
-              // should be ~= offPegPerc * 2 / 3, which will keep us above the peg
-              //
-              // this is a conservative heuristic
-              return token0.mul(offPegPerc / 3).div(10**18);
-          }
-        } else {
-            if (offPegPerc >= 10**17) {
-                return token1.mul(maxSlippageFactor).div(10**18);
-            } else {
-                return token1.mul(offPegPerc / 3).div(10**18);
-            }
-        }
-    }
+   
 
     /**
      * @notice given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
